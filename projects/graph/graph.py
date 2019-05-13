@@ -115,7 +115,6 @@ class Graph:
                 # Mark it as visited (print it and add it to the visited set)
                 print(v)
                 visited.add(v)
-                
                 # Then enqueue each of its neighbors in the queue
                 for neighbor in self.vertices[v]:
                     new_path = list(path)
@@ -123,17 +122,54 @@ class Graph:
                     q.enqueue(new_path)
                     if neighbor == destination_vertex:
                         return new_path
-
+        
     def dfs(self, starting_vertex, destination_vertex):
         """
         Return a list containing a path from
         starting_vertex to destination_vertex in
         depth-first order.
         """
-        pass  # TODO
+        # -------------------------------------------
+        # DFS - returns a list of any path 
+        # -------------------------------------------
+        s = Stack()
+        visited = []
+        s.push(starting_vertex)
+       
+        while s.size() > 0:
+           v = s.pop()
+           if v not in visited:
+              print(v)
+              visited.append(v)
+              if v == destination_vertex:
+                  return visited
+              for neighbor in self.vertices[v]:
+                  s.push(neighbor)
+        
+        # -------------------------------------------
+        # DFS - returns a list of the shortest path 
+        # -------------------------------------------
+        s = Stack()
+        visited = set()
+        s.push([starting_vertex])
+        
+        if starting_vertex == destination_vertex:
+            return [starting_vertex]
 
-
-
+        while s.size() > 0:
+            path = s.pop()
+            v = path[-1]
+            if v not in visited:
+                print(v)
+                visited.add(v)
+                if v == destination_vertex:
+                    return visited
+                for neighbor in self.vertices[v]:
+                    new_path = list(path)
+                    new_path.append(neighbor)
+                    s.push(new_path)
+                    if neighbor == destination_vertex:
+                        return new_path
 
 
 if __name__ == '__main__':
