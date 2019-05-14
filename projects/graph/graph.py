@@ -96,66 +96,41 @@ class Graph:
         q = Queue()
         # Create an empty Visited set to keep track of all visited vertex 
         visited = set()
-        # Add the starting vertex to the queue
+        # Add a Path of the starting vertex to the queue
         q.enqueue([starting_vertex])
-        
-        # check if starting and destination vertices are same
-        if starting_vertex == destination_vertex:
-            return [starting_vertex]
-
         # While the queue is not empty...
         while q.size() > 0:
-            # Dequeue the first vertex
+            # Dequeue the first path
             path = q.dequeue()
-            # get the last node of first vertex path
+            # get the last vertex of the path
             v = path[-1]
-            
+            # check if it's our destination
+            if v == destination_vertex:
+                return path  
             # If it has not been visited...
             if v not in visited:
-                # Mark it as visited (print it and add it to the visited set)
-                print(v)
+                # Mark it as visited (add it to the visited set)
                 visited.add(v)
-                # Then enqueue each of its neighbors in the queue
+                # Then enqueue path to each of its neighbors in the queue
                 for neighbor in self.vertices[v]:
-                    new_path = list(path)
+                    new_path = path.copy()
                     new_path.append(neighbor)
                     q.enqueue(new_path)
                     if neighbor == destination_vertex:
                         return new_path
-        
+        return None
+
+
     def dfs(self, starting_vertex, destination_vertex):
         """
         Return a list containing a path from
         starting_vertex to destination_vertex in
         depth-first order.
         """
-        # -------------------------------------------
-        # DFS - returns a list of any path 
-        # -------------------------------------------
-        s = Stack()
-        visited = []
-        s.push(starting_vertex)
-       
-        while s.size() > 0:
-           v = s.pop()
-           if v not in visited:
-              print(v)
-              visited.append(v)
-              if v == destination_vertex:
-                  return visited
-              for neighbor in self.vertices[v]:
-                  s.push(neighbor)
-        
-        # -------------------------------------------
-        # DFS - returns a list of the shortest path 
-        # -------------------------------------------
         s = Stack()
         visited = set()
         s.push([starting_vertex])
         
-        if starting_vertex == destination_vertex:
-            return [starting_vertex]
-
         while s.size() > 0:
             path = s.pop()
             v = path[-1]
@@ -163,14 +138,35 @@ class Graph:
                 print(v)
                 visited.add(v)
                 if v == destination_vertex:
-                    return visited
+                    return path
                 for neighbor in self.vertices[v]:
-                    new_path = list(path)
+                    new_path = path.copy()
+                    new_path.append(neighbor)
+                    s.push(new_path)
+        return None
+
+        """
+        Return a list containing a shortest path 
+        """
+        s = Stack()
+        visited = set()
+        s.push([starting_vertex])
+        
+        while s.size() > 0:
+            path = s.pop()
+            v = path[-1]
+            if v not in visited:
+                print(v)
+                visited.add(v)
+                if v == destination_vertex:
+                    return path
+                for neighbor in self.vertices[v]:
+                    new_path = path.copy()
                     new_path.append(neighbor)
                     s.push(new_path)
                     if neighbor == destination_vertex:
                         return new_path
-
+        return None
 
 if __name__ == '__main__':
     graph = Graph()  # Instantiate your graph
