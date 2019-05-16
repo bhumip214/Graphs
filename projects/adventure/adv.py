@@ -21,19 +21,99 @@ world.loadGraph(roomGraph)
 world.printRooms()
 
 player = Player("Name", world.startingRoom)
+player.currentRoom = world.startingRoom
 
+visited_rooms = set()
+visitedGraph = {}
 traversalPath = []
+oppositeDirections = {
+    'n': 's',
+    'e': 'w',
+    'w': 'e',
+    's': 'n'
+}
 
+def findWalkBackRoomIds(graph, startRoomId):
+    # if this is unexplored room, return None, we dont need to walk back 
+    for direction in graph[startRoomId]:
+        if graph[startRoomId][direction] == '?':
+            return None
+
+    # find out which rooms to walk back
+    q = []
+    q.append([startRoomId])
+    visited = set()
+
+    while len(q) > 0:
+        path = q.pop(0)
+        roomId = path[-1]
+
+        if roomId not in visited:
+            visited.add(roomId)
+        
+            for direction in graph[roomId]:
+                # if None, we have found a room we still need to explore,
+                if graph[roomId][direction] == '?':
+                    return path
+        
+            for direction in graph[roomId]:
+                newPath = path.copy()
+                roomInDirection = graph[roomId][direction]
+                newPath.append(roomInDirection)
+                q.append(newPath)
+    
+    return None
+
+
+def markRoomVisited(graph, currentRoom):
+    if currentRoom.id not in graph:
+        # create a map like { n: None, s: None, e: None, w: None } to track visited directions
+        graph[currentRoom.id] = {i: '?' for i in currentRoom.getExits()}
+        visited_rooms.add(currentRoom.id)
+
+
+while len(roomGraph) != len(visitedGraph):
+    currentRoomId = player.currentRoom.id
+
+    markRoomVisited(visitedGraph, player.currentRoom)
+
+    for direction in visitedGraph[currentRoomId]:
+        if visitedGraph[currentRoomId][direction] == '?':
+            # print(f"traveling {direction}")
+            traversalPath.append(direction)
+            player.travel(direction)
+            markRoomVisited(visitedGraph, player.currentRoom)
+
+            newRoomId = player.currentRoom.id
+            oppositeDirection = oppositeDirections[direction]
+            
+            visitedGraph[currentRoomId][direction] = newRoomId
+            visitedGraph[newRoomId][oppositeDirection] = currentRoomId
+            # print(f"visitedGraph {visitedGraph}")
+
+            currentRoomId = newRoomId 
+            break
+
+    # if there are no unexplored rooms, find out which rooms to walk back
+    walkBackRoomIds = findWalkBackRoomIds(visitedGraph, player.currentRoom.id)
+    # [2, 1, 0]
+    if walkBackRoomIds is not None:
+        # print(f"NEED to walk back {walkBackRoomIds}")
+        for id in walkBackRoomIds:
+            for direction in visitedGraph[currentRoomId]:
+                if visitedGraph[currentRoomId][direction] == id:
+                    traversalPath.append(direction)
+                    player.travel(direction)
 
 
 # TRAVERSAL TEST
-visited_rooms = set()
-player.currentRoom = world.startingRoom
-visited_rooms.add(player.currentRoom)
+# visited_rooms = set()
+# player.currentRoom = world.startingRoom
+# visited_rooms.add(player.currentRoom)
 
-for move in traversalPath:
-    player.travel(move)
-    visited_rooms.add(player.currentRoom)
+# for move in traversalPath:
+#     player.travel(move)
+#     visited_rooms.add(player.currentRoom)
 
 if len(visited_rooms) == len(roomGraph):
     print(f"TESTS PASSED: {len(traversalPath)} moves, {len(visited_rooms)} rooms visited")
