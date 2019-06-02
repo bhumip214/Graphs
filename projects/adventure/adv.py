@@ -21,100 +21,99 @@ world.loadGraph(roomGraph)
 world.printRooms()
 
 player = Player("Name", world.startingRoom)
+player.currentRoom = world.startingRoom
 
-mygraph = {}
+visited_rooms = set()
+visitedGraph = {}
 traversalPath = []
+oppositeDirections = {
+    'n': 's',
+    'e': 'w',
+    'w': 'e',
+    's': 'n'
+}
 
-def opposite(direction):
-    if direction == 'n':
-        return 's'
-    elif direction == 's':
-        return 'n'
-    elif direction == 'e':
-        return 'w'
-    elif direction == 'w':
-        return 'e'
+def findWalkBackRoomIds(graph, startRoomId):
+    # if this is unexplored room, return None, we dont need to walk back 
+    for direction in graph[startRoomId]:
+        if graph[startRoomId][direction] == '?':
+            return None
 
+    # find out which rooms to walk back
+    q = []
+    q.append([startRoomId])
+    visited = set()
 
-def bfs_path(graph, start_room):
-    queue = []
-    queue.append([start_room])
-    visit = set()
+    while len(q) > 0:
+        path = q.pop(0)
+        roomId = path[-1]
 
-    while queue:
-        path = queue.pop(0)
-        x_room = path[-1]
-        if x_room not in visit:
-            visit.add(x_room)
-            for room_exit in graph[x_room]:
-                if graph[x_room][room_exit] == '?':
+        if roomId not in visited:
+            visited.add(roomId)
+        
+            for direction in graph[roomId]:
+                # if None, we have found a room we still need to explore,
+                if graph[roomId][direction] == '?':
                     return path
-            for x in graph[x_room]:
-                adjacent_room = graph[x_room][x]
-                new_path = list(path)
-                new_path.append(adjacent_room)
-                queue.append(new_path)
+        
+            for direction in graph[roomId]:
+                newPath = path.copy()
+                roomInDirection = graph[roomId][direction]
+                newPath.append(roomInDirection)
+                q.append(newPath)
+    
     return None
 
 
-while len(mygraph) != len(roomGraph):
-    current = player.currentRoom.id
-    if current not in mygraph:
-        mygraph[current] = {i: '?' for i in player.currentRoom.getExits()}
-        
-    room_exit = None
-    for direction in mygraph[current]:
-        if mygraph[current][direction] == '?':
-            room_exit = direction
-            if room_exit is not None:
-                traversalPath.append(room_exit)
-                player.travel(room_exit)
-                discovered = player.currentRoom.id
+def markRoomVisited(graph, currentRoom):
+    if currentRoom.id not in graph:
+        # create a map like { n: None, s: None, e: None, w: None } to track visited directions
+        graph[currentRoom.id] = {i: '?' for i in currentRoom.getExits()}
+        visited_rooms.add(currentRoom.id)
 
-                if discovered not in mygraph:
-                    mygraph[discovered] = {i: '?' for i in player.currentRoom.getExits()}
 
-            mygraph[current][room_exit] = discovered
-            mygraph[discovered][opposite(room_exit)] = current  # the value of current
-            current = discovered  # current is now the value of discovered
+while len(roomGraph) != len(visitedGraph):
+    currentRoomId = player.currentRoom.id
+
+    markRoomVisited(visitedGraph, player.currentRoom)
+
+    for direction in visitedGraph[currentRoomId]:
+        if visitedGraph[currentRoomId][direction] == '?':
+            # print(f"traveling {direction}")
+            traversalPath.append(direction)
+            player.travel(direction)
+            markRoomVisited(visitedGraph, player.currentRoom)
+
+            newRoomId = player.currentRoom.id
+            oppositeDirection = oppositeDirections[direction]
+            
+            visitedGraph[currentRoomId][direction] = newRoomId
+            visitedGraph[newRoomId][oppositeDirection] = currentRoomId
+            # print(f"visitedGraph {visitedGraph}")
+
+            currentRoomId = newRoomId 
             break
 
-    # if there are no unexplored question marks
-    keys = bfs_path(mygraph, player.currentRoom.id)
-    print(keys)
-    if keys is not None:
-        for room in keys:
-            for direction in mygraph[current]:
-                print(f"mg d", mygraph[current])
-                if mygraph[current][direction] == room:
+    # if there are no unexplored rooms, find out which rooms to walk back
+    walkBackRoomIds = findWalkBackRoomIds(visitedGraph, player.currentRoom.id)
+    # [2, 1, 0]
+    if walkBackRoomIds is not None:
+        # print(f"NEED to walk back {walkBackRoomIds}")
+        for id in walkBackRoomIds:
+            for direction in visitedGraph[currentRoomId]:
+                if visitedGraph[currentRoomId][direction] == id:
                     traversalPath.append(direction)
                     player.travel(direction)
-            current = player.currentRoom.id
-
-print(mygraph)
-###################################################
-# FILL THIS IN
-
-# You have a player. The player can see the exits, but doesn't know the room nums until inside that room.
-# You need a create a traversal_graph. keep up with the rooms the player has explored
-# When you player enters a room, he will note the exits and add a "?" for a temporary room num.
-# You will then have your player randomly choose a "?" to explore.
-    # On entering the room, the player will update the "?" to the room num
-    # The player will detect if the room num has already been visited,
-        # if not, add to visited
-        # else, back out and visit another room
-
-
 
 
 # TRAVERSAL TEST
-visited_rooms = set()
-player.currentRoom = world.startingRoom
-visited_rooms.add(player.currentRoom)
+# visited_rooms = set()
+# player.currentRoom = world.startingRoom
+# visited_rooms.add(player.currentRoom)
 
-for move in traversalPath:
-    player.travel(move)
-    visited_rooms.add(player.currentRoom)
+# for move in traversalPath:
+#     player.travel(move)
+#     visited_rooms.add(player.currentRoom)
 
 if len(visited_rooms) == len(roomGraph):
     print(f"TESTS PASSED: {len(traversalPath)} moves, {len(visited_rooms)} rooms visited")
